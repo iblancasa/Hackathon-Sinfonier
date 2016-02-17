@@ -56,6 +56,25 @@ class TestPySpout(basesinfonierspout.BaseSinfonierSpout):
         response = urllib2.urlopen(req) #Opening URL
         web_data = response.read() #Reading response
         soup = BeautifulSoup(web_data, 'html.parser') #HTML Parser
+
+        totalJobs = soup.findAll("div", { "class" : "results-context" })
+
+        if not totalJobs or len(totalJobs)==0:#No results
+            self.addField("jobs", [])
+            self.emit()
+            return
+
+        #Get all results in one webpage
+        total_results = totalJobs[0].findChildren()[0].text
+        url+="&start=1&count="+total_results
+
+
+        #Formatting new URL
+        req = urllib2.Request(url) #Creating request
+        response = urllib2.urlopen(req) #Opening URL
+        web_data = response.read() #Reading response
+        soup = BeautifulSoup(web_data, 'html.parser') #HTML Parser
+
         jobs = soup.findAll("span", { "class" : "job-title-text" })
 
         job_names = []
@@ -81,4 +100,3 @@ class TestPySpout(basesinfonierspout.BaseSinfonierSpout):
 
 
 TestPySpout().run()
-
