@@ -59,10 +59,9 @@ class getArchiveOrgDocs(basesinfonierspout.BaseSinfonierSpout):
             response = urllib2.urlopen(req) #Opening URL
             web_data = response.read() #Reading response
             jsonData = json.loads(web_data)
+            self.addField("result", jsonData["response"]["docs"])
         except:
-            self.addField("result", "No data")
-            return
-        self.addField("result", jsonData["response"]["docs"])
+            self.addField("result", "Data error")
         self.emit()
 
 
