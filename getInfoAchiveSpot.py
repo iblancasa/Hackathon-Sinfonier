@@ -30,7 +30,7 @@ import basesinfonierspout
 import json
 import urllib2
 
-class TestPySpout(basesinfonierspout.BaseSinfonierSpout):
+class getArchiveOrgDocs(basesinfonierspout.BaseSinfonierSpout):
 
     def __init__(self):
         basesinfonierspout.BaseSinfonierSpout().__init__()
@@ -54,12 +54,14 @@ class TestPySpout(basesinfonierspout.BaseSinfonierSpout):
         "type&fl%5B%5D=volume&fl%5B%5D=week&fl%5B%5D=year&sort%5B%5D=&sort%5B%5D=" \
         "&sort%5B%5D=&rows="+self.results+"&output=json"
 
-
-        req = urllib2.Request(url) #Creating request
-        response = urllib2.urlopen(req) #Opening URL
-        web_data = response.read() #Reading response
-        jsonData = json.loads(web_data)
-
+        try:
+            req = urllib2.Request(url) #Creating request
+            response = urllib2.urlopen(req) #Opening URL
+            web_data = response.read() #Reading response
+            jsonData = json.loads(web_data)
+        except:
+            self.addField("result", "No data")
+            return
         self.addField("result", jsonData["response"]["docs"])
         self.emit()
 
@@ -68,4 +70,4 @@ class TestPySpout(basesinfonierspout.BaseSinfonierSpout):
         pass
 
 
-TestPySpout().run()
+getArchiveOrgDocs().run()
