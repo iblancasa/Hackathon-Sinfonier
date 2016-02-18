@@ -52,6 +52,7 @@ class TestPySpout(basesinfonierspout.BaseSinfonierSpout):
         url+="&location="
         url+=self.city
 
+
         req = urllib2.Request(url) #Creating request
         response = urllib2.urlopen(req) #Opening URL
         web_data = response.read() #Reading response
@@ -75,15 +76,15 @@ class TestPySpout(basesinfonierspout.BaseSinfonierSpout):
         web_data = response.read() #Reading response
         soup = BeautifulSoup(web_data, 'html.parser') #HTML Parser
 
-        jobs = soup.findAll("span", { "class" : "job-title-text" })
+
+        jobs = soup.findAll("a", { "class" : "job-title-link" })
 
         job_names = []
-
-        for one_job in jobs:
-            if one_job.text=="" or one_job.text==None:
-                job_names.append("No title")
-            else:
-                job_names.append(one_job.text)
+        for current_job in jobs:
+            new = {}
+            new["url"] = current_job['href']
+            new["name"] = current_job.text
+            job_names.append(new)
 
 
         if job_names == []: #No results
