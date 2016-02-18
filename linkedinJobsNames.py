@@ -1,10 +1,9 @@
-
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
     The MIT License (MIT)
 
-    Copyright (c) 2015 sinfonier-project
+    Copyright (c) 2014 sinfonier-project
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -26,78 +25,79 @@
 """
 
 
-from apscheduler.schedulers.background import BackgroundScheduler
-from collections import deque
-import time
-import basesinfonierspout
+import basesinfonierbolt
+import datetime
 import json
-
 import urllib2
 from bs4 import BeautifulSoup
 
-class TestPySpout(basesinfonierspout.BaseSinfonierSpout):
+class getOffersLinkedinCityKeywords(basesinfonierbolt.BaseSinfonierBolt):
 
     def __init__(self):
-        basesinfonierspout.BaseSinfonierSpout().__init__()
 
-    def useropen(self):
+        basesinfonierbolt.BaseSinfonierBolt().__init__()
 
+    def userprepare(self):
         self.city = self.getParam("city") #Get city
         self.keywords = str(self.getParam("keywords")).replace(" ", "+")#Get and format keywords
 
-    def usernextTuple(self):
+
+    def userprocess(self):
         #Formatting URL
         url="https://es.linkedin.com/jobs/search?keywords=" #URL of jobs
         url+=self.keywords
         url+="&location="
         url+=self.city
 
+        try:
+            req = urllib2.Request(url) #Creating request
+            response = urllib2.urlopen(req) #Opening URL
+            web_data = response.read() #Reading response
+            soup = BeautifulSoup(web_data, 'html.parser') #HTML Parser
+            totalJobs = soup.findAll("div", { "class" : "results-context" })
 
-        req = urllib2.Request(url) #Creating request
-        response = urllib2.urlopen(req) #Opening URL
-        web_data = response.read() #Reading response
-        soup = BeautifulSoup(web_data, 'html.parser') #HTML Parser
+            #Get all results in one webpage
+            total_results = totalJobs[0].findChildren()[0].text
 
-        totalJobs = soup.findAll("div", { "class" : "results-context" })
-
-        if not totalJobs or len(totalJobs)==0:#No results
-            self.addField("jobs", [])
+        except:
+            self.addField("jobData", {})
             self.emit()
             return
 
-        #Get all results in one webpage
-        total_results = totalJobs[0].findChildren()[0].text
+        if not totalJobs or len(totalJobs)==0:#No results
+            self.addField("jobData", {})
+            self.emit()
+            return
+
+
         url+="&start=1&count="+total_results
 
-
         #Formatting new URL
-        req = urllib2.Request(url) #Creating request
-        response = urllib2.urlopen(req) #Opening URL
-        web_data = response.read() #Reading response
-        soup = BeautifulSoup(web_data, 'html.parser') #HTML Parser
+        try:
+            req = urllib2.Request(url) #Creating request
+            response = urllib2.urlopen(req) #Opening URL
+            web_data = response.read() #Reading response
+            soup = BeautifulSoup(web_data, 'html.parser') #HTML Parser
+            jobs = soup.findAll("a", { "class" : "job-title-link" })
+        except:
+            self.addField("jobData", {})
+            self.emit()
+            return
 
-
-        jobs = soup.findAll("a", { "class" : "job-title-link" })
-
-        job_names = []
         for current_job in jobs:
             new = {}
-            new["url"] = current_job['href']
-            new["name"] = current_job.text
-            job_names.append(new)
 
-
-        if job_names == []: #No results
-            job_names=["No results"]
-
-
-
-        self.addField("jobs", job_names)
-        self.emit()
+            try:
+                new["url"] = current_job['href']
+                new["name"] = current_job.text
+                self.addField("jobData", new)
+            except:
+                new["url"] = ""
+                new["name"] = ""
+            self.emit()
 
 
     def userclose(self):
         pass
 
-
-TestPySpout().run()
+getOffersLinkedinCityKeywords().run()
