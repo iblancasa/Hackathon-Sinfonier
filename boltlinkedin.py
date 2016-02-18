@@ -49,25 +49,24 @@ class getDataFromLinkedinJob(basesinfonierbolt.BaseSinfonierBolt):
             soup = BeautifulSoup(web_data, 'html.parser') #HTML Parser
             json_comment = soup.find("code", {"id": "decoratedJobPostingModule"}).string.encode('utf-8','replace')
             jsonData = json.loads(json_comment,'utf-8')#To JSON
+
+            #Getting data
+            company = jsonData["decoratedJobPosting"]["jobPosting"]["companyName"]
+            title = jsonData["decoratedJobPosting"]["jobPosting"]["title"]
+            description = jsonData["decoratedJobPosting"]["jobPosting"]["description"]["rawText"]
+            location = jsonData["decoratedJobPosting"]["formattedLocation"]
+
+            job = {}
+            job["title"] = title
+            job["company"] = company
+            job["location"] = location
+            job["description"] = description
+
+            self.addField("jobData", job)
+
         except:
             self.addField("jobData", [])
-            self.emit()
-            return
 
-        #Getting data
-
-        company = jsonData["decoratedJobPosting"]["jobPosting"]["companyName"]
-        title = jsonData["decoratedJobPosting"]["jobPosting"]["title"]
-        description = jsonData["decoratedJobPosting"]["jobPosting"]["description"]["rawText"]
-        location = jsonData["decoratedJobPosting"]["formattedLocation"]
-
-        job = {}
-        job["title"] = title
-        job["company"] = company
-        job["location"] = location
-        job["description"] = description
-
-        self.addField("jobData", job)
         self.emit()
 
 
