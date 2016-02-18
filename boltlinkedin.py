@@ -31,7 +31,7 @@ import json
 import urllib2
 from bs4 import BeautifulSoup
 
-class AddTimestamp(basesinfonierbolt.BaseSinfonierBolt):
+class getDataFromLinkedinJob(basesinfonierbolt.BaseSinfonierBolt):
 
     def __init__(self):
 
@@ -39,38 +39,39 @@ class AddTimestamp(basesinfonierbolt.BaseSinfonierBolt):
 
     def userprepare(self):
 
-        self.jobs = self.getField("jobs")
+        self.job = self.getField("jobURL")
 
     def userprocess(self):
-        jobsData=[]
-
-        for current_job in self.jobs:
-            req = urllib2.Request(current_job["url"], headers={ 'User-Agent': 'Mozilla/5.0' }) #Creating request
+        try:
+            req = urllib2.Request(self.job, headers={ 'User-Agent': 'Mozilla/5.0' }) #Creating request
             response = urllib2.urlopen(req) #Opening URL
             web_data = response.read() #Reading response
             soup = BeautifulSoup(web_data, 'html.parser') #HTML Parser
-
-            #Getting data
             json_comment = soup.find("code", {"id": "decoratedJobPostingModule"}).string.encode('utf-8','replace')
+            jsonData = json.loads(json_comment,'utf-8')#To JSON
+        except:
+            self.addField("jobData", [])
+            self.emit()
+            return
 
-            jsonData = json.loads(json_comment,'latin-1')#To JSON
-            company = jsonData["decoratedJobPosting"]["jobPosting"]["companyName"]
-            title = jsonData["decoratedJobPosting"]["jobPosting"]["title"]
-            description = jsonData["decoratedJobPosting"]["jobPosting"]["description"]["rawText"]
-            location = jsonData["decoratedJobPosting"]["formattedLocation"]
+        #Getting data
 
-            job = {}
-            job["title"] = title
-            job["company"] = company
-            job["location"] = location
-            job["description"] = description
-            jobsData.append(job)
+        company = jsonData["decoratedJobPosting"]["jobPosting"]["companyName"]
+        title = jsonData["decoratedJobPosting"]["jobPosting"]["title"]
+        description = jsonData["decoratedJobPosting"]["jobPosting"]["description"]["rawText"]
+        location = jsonData["decoratedJobPosting"]["formattedLocation"]
 
-        self.addField("jobsData", jobsData)
+        job = {}
+        job["title"] = title
+        job["company"] = company
+        job["location"] = location
+        job["description"] = description
+
+        self.addField("jobData", job)
         self.emit()
 
 
     def userclose(self):
         pass
 
-AddTimestamp().run()
+getDataFromLinkedinJob().run()
