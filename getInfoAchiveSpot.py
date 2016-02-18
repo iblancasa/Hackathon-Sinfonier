@@ -40,6 +40,7 @@ class TestPySpout(basesinfonierspout.BaseSinfonierSpout):
         self.keywords = self.getParam("keywords")
 
     def usernextTuple(self):
+        self.keywords = self.keywords.replace(" ","+")
         url = "https://archive.org/advancedsearch.php?q="+self.keywords+"&fl%5B%5D=" \
         "avg_rating&fl%5B%5D=call_number&fl%5B%5D=collection&fl%5B%5D=" \
         "contributor&fl%5B%5D=coverage&fl%5B%5D=creator&fl%5B%5D=date&fl%5B%5D=" \
